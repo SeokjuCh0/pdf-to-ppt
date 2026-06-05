@@ -21,6 +21,17 @@ input {
   font: inherit;
 }
 
+textarea,
+select {
+  width: 100%;
+  border: 1px solid #b8c0b8;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #1e2528;
+  padding: 8px 10px;
+  font: inherit;
+}
+
 button {
   height: 38px;
   border: 1px solid #b8c0b8;
@@ -183,6 +194,98 @@ p {
   margin-bottom: 16px;
 }
 
+.component-workbench {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.72fr) minmax(220px, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.component-list,
+.component-settings {
+  min-height: 250px;
+  max-height: 310px;
+  overflow: auto;
+  border: 1px solid #d8ddd6;
+  border-radius: 8px;
+  background: #fbfcf8;
+}
+
+.component-list {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 8px;
+}
+
+.component-item {
+  height: auto;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  border-radius: 6px;
+  padding: 8px 9px;
+}
+
+.component-item strong {
+  font-size: 12px;
+  color: #226a55;
+}
+
+.component-item span {
+  overflow: hidden;
+  color: #3f4a44;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.component-item.selected {
+  border-color: #226a55;
+  background: #e7f2ec;
+}
+
+.component-item.excluded {
+  opacity: 0.48;
+}
+
+.component-empty,
+.settings-empty {
+  padding: 14px;
+  color: #647066;
+}
+
+.component-settings {
+  padding: 12px;
+}
+
+.settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.include-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #38433d;
+  font-size: 13px;
+}
+
+.include-toggle input {
+  width: 16px;
+  height: 16px;
+}
+
+.bbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
 .metric {
   border: 1px solid #d8ddd6;
   border-radius: 8px;
@@ -242,5 +345,9 @@ pre {
   .controls {
     border-right: 0;
     border-bottom: 1px solid #d8ddd6;
+  }
+
+  .component-workbench {
+    grid-template-columns: 1fr;
   }
 }

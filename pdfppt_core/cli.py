@@ -15,7 +15,7 @@ from typing import Any
 from pptx import Presentation
 
 from scripts.extract_pdf_json import extract_pdf_json, find_parser_jar
-from scripts.json_to_pptx import convert_json_to_pptx
+from scripts.json_to_pptx import convert_json_to_pptx, grouped_by_page, iter_renderable_objects, text_from_object
 from scripts.pdf_to_pptx import copy_json_with_external_assets
 
 
@@ -55,6 +55,30 @@ def summarize_layout(data: dict[str, Any]) -> dict[str, Any]:
         "images": types.get("image", 0),
         "warnings": warnings,
     }
+
+
+def list_components(data: dict[str, Any]) -> list[dict[str, Any]]:
+    components: list[dict[str, Any]] = []
+    for page in sorted(grouped_by_page(data)):
+        page_items = grouped_by_page(data)[page]
+        for index, obj in enumerate(iter_renderable_objects(page_items), start=1):
+            obj_type = str(obj.get("type") or "unknown").lower()
+            bbox = obj.get("bounding box")
+            component_id = str(obj.get("id") or f"{page}:{index}")
+            text = text_from_object(obj)
+            components.append({
+                "id": component_id,
+                "page": int(obj.get("page number") or page),
+                "type": obj_type,
+                "editable": obj_type not in {"image"},
+                "bounding_box": bbox if isinstance(bbox, list) and len(bbox) == 4 else None,
+                "font": obj.get("font"),
+                "font_size": obj.get("font size"),
+                "text": text,
+                "source": obj.get("source"),
+                "label": text[:80] if text else obj.get("source") or obj_type,
+            })
+    return components
 
 
 def summarize_pptx(pptx_path: Path) -> dict[str, Any]:
@@ -119,6 +143,7 @@ def command_inspect(args: argparse.Namespace) -> int:
             "pdf": str(pdf),
             "json": str(args.json_output.expanduser().resolve()) if args.json_output else str(json_path),
             "layout": summarize_layout(data),
+            "components": list_components(data),
         })
     return 0
 
@@ -151,6 +176,7 @@ def command_convert(args: argparse.Namespace) -> int:
             page_width=args.page_width,
             page_height=args.page_height,
             fallback_font=args.fallback_font,
+            settings_path=args.settings.expanduser().resolve() if args.settings else None,
         )
         data = json.loads(json_path.read_text(encoding="utf-8"))
         if args.json_output:
@@ -162,6 +188,7 @@ def command_convert(args: argparse.Namespace) -> int:
             "pptx": str(pptx),
             "json": str(args.json_output.expanduser().resolve()) if args.json_output else str(json_path),
             "layout": summarize_layout(data),
+            "components": list_components(data),
             "pptx_summary": summarize_pptx(pptx),
         })
         return 0
@@ -217,6 +244,7 @@ def build_parser() -> argparse.ArgumentParser:
     convert_parser.add_argument("--page-width", type=float, help="Source page width in PDF points.")
     convert_parser.add_argument("--page-height", type=float, help="Source page height in PDF points.")
     convert_parser.add_argument("--fallback-font", default="Pretendard")
+    convert_parser.add_argument("--settings", type=Path, help="Optional component settings JSON.")
     build_parser_common(convert_parser)
     convert_parser.set_defaults(func=command_convert)
 

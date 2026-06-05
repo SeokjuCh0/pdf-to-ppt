@@ -152,6 +152,54 @@ def iter_renderable_objects(items: Iterable[dict[str, Any]]) -> Iterable[dict[st
                 yield from iter_renderable_objects(children)
 
 
+def load_component_settings(settings_path: Path | None) -> dict[str, dict[str, Any]]:
+    if not settings_path:
+        return {}
+    data = json.loads(settings_path.read_text(encoding="utf-8"))
+    components = data.get("components", data) if isinstance(data, dict) else {}
+    if not isinstance(components, dict):
+        return {}
+    return {str(key): value for key, value in components.items() if isinstance(value, dict)}
+
+
+def apply_component_settings(
+    obj: dict[str, Any],
+    settings: dict[str, dict[str, Any]],
+    component_id: str | None = None,
+) -> dict[str, Any] | None:
+    obj_id = component_id or (str(obj.get("id")) if obj.get("id") is not None else None)
+    if obj_id is None:
+        return obj
+    overrides = settings.get(obj_id)
+    if not overrides:
+        return obj
+    if overrides.get("include") is False:
+        return None
+    updated = dict(obj)
+    if isinstance(overrides.get("type"), str) and overrides["type"].strip():
+        updated["type"] = overrides["type"].strip()
+    if "content" in overrides and isinstance(overrides["content"], str):
+        updated["content"] = overrides["content"]
+        updated["kids"] = []
+    bbox = overrides.get("bounding box") or overrides.get("bounding_box")
+    if isinstance(bbox, list) and len(bbox) == 4:
+        try:
+            updated["bounding box"] = [float(value) for value in bbox]
+        except (TypeError, ValueError):
+            pass
+    if "font size" in overrides:
+        try:
+            updated["font size"] = float(overrides["font size"])
+        except (TypeError, ValueError):
+            pass
+    elif "font_size" in overrides:
+        try:
+            updated["font size"] = float(overrides["font_size"])
+        except (TypeError, ValueError):
+            pass
+    return updated
+
+
 def metadata_page_size(data: dict[str, Any], page_number: int) -> tuple[float, float] | None:
     pages = data.get("pages")
     if isinstance(pages, list):
@@ -313,8 +361,10 @@ def convert_json_to_pptx(
     page_width: float | None = None,
     page_height: float | None = None,
     fallback_font: str = CJK_FALLBACK,
+    settings_path: Path | None = None,
 ) -> Path:
     data = json.loads(json_path.read_text(encoding="utf-8"))
+    component_settings = load_component_settings(settings_path)
     grouped = grouped_by_page(data)
     first_page = min(grouped)
     inferred_width, inferred_height = infer_page_size(data, first_page)
@@ -334,7 +384,11 @@ def convert_json_to_pptx(
         scale = min(slide_width / native_width, slide_height / native_height) if native_width and native_height else 1.0
         font_scale = scale
         slide = prs.slides.add_slide(blank_layout)
-        for obj in iter_renderable_objects(grouped[page]):
+        for index, raw_obj in enumerate(iter_renderable_objects(grouped[page]), start=1):
+            component_id = str(raw_obj.get("id") or f"{page}:{index}")
+            obj = apply_component_settings(raw_obj, component_settings, component_id)
+            if obj is None:
+                continue
             obj_type = str(obj.get("type") or "").lower()
             if obj_type in TABLE_TYPES:
                 add_table(slide, obj, native_height, scale, font_scale, fallback_font)
@@ -355,6 +409,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--page-width", type=float, help="Source page width in PDF points.")
     parser.add_argument("--page-height", type=float, help="Source page height in PDF points.")
     parser.add_argument("--fallback-font", default=CJK_FALLBACK, help="Fallback font for missing/CJK fonts.")
+    parser.add_argument("--settings", type=Path, help="Optional component settings JSON.")
     return parser
 
 
@@ -367,6 +422,7 @@ def main(argv: list[str] | None = None) -> int:
             page_width=args.page_width,
             page_height=args.page_height,
             fallback_font=args.fallback_font,
+            settings_path=args.settings.expanduser().resolve() if args.settings else None,
         )
         print(output)
         return 0

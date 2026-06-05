@@ -118,6 +118,7 @@ fn convert_pdf(
     pptx_path: Option<String>,
     java_cmd: String,
     pages: Option<String>,
+    settings_json: Option<String>,
 ) -> Result<ProcessOutput, String> {
     let pptx_path = pptx_path
         .filter(|value| !value.trim().is_empty())
@@ -127,6 +128,16 @@ fn convert_pdf(
         fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     }
     let json_path = PathBuf::from(&pptx_path).with_extension("json");
+    let settings_path = if let Some(settings_json) = settings_json.filter(|value| !value.trim().is_empty()) {
+        let path = env::temp_dir().join("pdfppt").join("component-settings.json");
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+        }
+        fs::write(&path, settings_json).map_err(|error| error.to_string())?;
+        Some(path)
+    } else {
+        None
+    };
     let mut command = core_command("convert");
     command
         .arg(pdf_path)
@@ -135,6 +146,9 @@ fn convert_pdf(
         .arg(java_cmd)
         .arg("--json-output")
         .arg(json_path);
+    if let Some(settings_path) = settings_path {
+        command.arg("--settings").arg(settings_path);
+    }
     if let Some(pages) = pages.filter(|value| !value.trim().is_empty()) {
         command.arg("--pages").arg(pages);
     }

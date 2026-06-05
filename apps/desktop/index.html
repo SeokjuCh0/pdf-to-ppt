@@ -69,6 +69,47 @@
               </div>
             </div>
 
+            <div class="component-workbench">
+              <div class="component-list" id="componentList"></div>
+              <div class="component-settings" id="componentSettings">
+                <div class="settings-empty" id="settingsEmpty">Inspect a PDF, then select a component.</div>
+                <div class="settings-form" id="settingsForm" hidden>
+                  <div class="settings-head">
+                    <strong id="componentTitle">Component</strong>
+                    <label class="include-toggle">
+                      <input id="componentInclude" type="checkbox" checked />
+                      <span>Include</span>
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Type</span>
+                    <select id="componentType">
+                      <option value="heading">heading</option>
+                      <option value="paragraph">paragraph</option>
+                      <option value="list item">list item</option>
+                      <option value="text chunk">text chunk</option>
+                      <option value="image">image</option>
+                      <option value="table">table</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Text</span>
+                    <textarea id="componentText" rows="5"></textarea>
+                  </label>
+                  <div class="bbox-grid">
+                    <label class="field"><span>Left</span><input id="bboxLeft" type="number" step="0.1" /></label>
+                    <label class="field"><span>Bottom</span><input id="bboxBottom" type="number" step="0.1" /></label>
+                    <label class="field"><span>Right</span><input id="bboxRight" type="number" step="0.1" /></label>
+                    <label class="field"><span>Top</span><input id="bboxTop" type="number" step="0.1" /></label>
+                  </div>
+                  <label class="field">
+                    <span>Font size</span>
+                    <input id="componentFontSize" type="number" step="0.1" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div class="warnings" id="warnings"></div>
             <pre id="output" aria-live="polite"></pre>
           </div>
