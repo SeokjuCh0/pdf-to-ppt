@@ -1,5 +1,12 @@
 # Completion Review: Vendored OpenDataLoader PDF-to-PPT Skill
 
+## Terminal Workflow Status
+
+- Workflow: `ralplan`
+- Status: `complete`
+- Phase: `complete`
+- Stop condition: satisfied
+
 ## Status
 
 Plan execution is complete for the repository-owned parser path. The remaining
