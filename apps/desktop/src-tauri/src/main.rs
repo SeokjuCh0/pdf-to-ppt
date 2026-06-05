@@ -1,8 +1,10 @@
 use serde::Serialize;
 use std::{
     env,
+    fs,
     path::PathBuf,
     process::{Command, Stdio},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 #[derive(Serialize)]
@@ -48,6 +50,21 @@ fn run_command(mut command: Command) -> Result<ProcessOutput, String> {
     })
 }
 
+fn default_temp_pptx_path(pdf_path: &str) -> PathBuf {
+    let stem = PathBuf::from(pdf_path)
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("pdfppt")
+        .to_string();
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0);
+    env::temp_dir()
+        .join("pdfppt")
+        .join(format!("{stem}-{timestamp}.pptx"))
+}
+
 #[tauri::command]
 fn pick_pdf() -> Option<String> {
     rfd::FileDialog::new()
@@ -86,10 +103,17 @@ fn inspect_pdf(pdf_path: String, java_cmd: String, pages: Option<String>) -> Res
 #[tauri::command]
 fn convert_pdf(
     pdf_path: String,
-    pptx_path: String,
+    pptx_path: Option<String>,
     java_cmd: String,
     pages: Option<String>,
 ) -> Result<ProcessOutput, String> {
+    let pptx_path = pptx_path
+        .filter(|value| !value.trim().is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| default_temp_pptx_path(&pdf_path));
+    if let Some(parent) = pptx_path.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
     let json_path = PathBuf::from(&pptx_path).with_extension("json");
     let mut command = core_command("convert");
     command
@@ -105,13 +129,37 @@ fn convert_pdf(
     run_command(command)
 }
 
+#[tauri::command]
+fn download_pptx(source_path: String, default_path: Option<String>) -> Result<String, String> {
+    let source = PathBuf::from(source_path);
+    if !source.is_file() {
+        return Err(format!("PPTX not found: {}", source.display()));
+    }
+    let mut dialog = rfd::FileDialog::new().add_filter("PowerPoint", &["pptx"]);
+    if let Some(path) = default_path {
+        let path = PathBuf::from(path);
+        if let Some(parent) = path.parent() {
+            dialog = dialog.set_directory(parent);
+        }
+        if let Some(name) = path.file_name() {
+            dialog = dialog.set_file_name(name.to_string_lossy().to_string());
+        }
+    }
+    let Some(target) = dialog.save_file() else {
+        return Err("Save cancelled.".to_string());
+    };
+    fs::copy(&source, &target).map_err(|error| error.to_string())?;
+    Ok(target.to_string_lossy().to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             pick_pdf,
             pick_output,
             inspect_pdf,
-            convert_pdf
+            convert_pdf,
+            download_pptx
         ])
         .run(tauri::generate_context!())
         .expect("failed to run PDFPPT desktop app");

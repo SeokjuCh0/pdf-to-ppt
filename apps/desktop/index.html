@@ -18,20 +18,17 @@
 
         <section class="workspace" aria-label="Conversion workspace">
           <div class="controls">
-            <label class="field">
-              <span>PDF</span>
-              <div class="path-row">
-                <input id="pdfPath" placeholder="Choose a PDF file" autocomplete="off" />
-                <button id="pickPdf" type="button">Choose</button>
+            <div class="drop-zone" id="dropZone">
+              <div>
+                <strong>Drop PDF here</strong>
+                <span id="dropHint">or choose a file from your computer</span>
               </div>
-            </label>
+              <button id="pickPdf" type="button">Choose PDF</button>
+            </div>
 
             <label class="field">
-              <span>Output PPTX</span>
-              <div class="path-row">
-                <input id="pptxPath" placeholder="Choose output path" autocomplete="off" />
-                <button id="pickPptx" type="button">Save As</button>
-              </div>
+              <span>Selected PDF</span>
+              <input id="pdfPath" placeholder="No PDF selected" autocomplete="off" readonly />
             </label>
 
             <div class="option-grid">
@@ -48,6 +45,7 @@
             <div class="actions">
               <button id="inspect" type="button">Inspect</button>
               <button id="convert" class="primary" type="button">Convert</button>
+              <button id="download" type="button" disabled>Download PPTX</button>
             </div>
           </div>
 

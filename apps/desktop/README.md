@@ -9,6 +9,13 @@ The app is intentionally thin:
 - Rust commands run the local `pdfppt_core` CLI;
 - no HTTP server is used in packaged builds.
 
+## Workflow
+
+1. Drag a PDF onto the drop zone, or click `Choose PDF`.
+2. Run `Inspect` to see parser/editability warnings before conversion.
+3. Run `Convert` to create a temporary PPTX.
+4. Click `Download PPTX` to choose where the generated file is saved.
+
 ## Development
 
 From this directory:

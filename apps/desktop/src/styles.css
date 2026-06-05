@@ -109,6 +109,37 @@ p {
   background: #f9faf6;
 }
 
+.drop-zone {
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px dashed #8ba99b;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 18px;
+  background: #eef6f1;
+}
+
+.drop-zone.drag-over {
+  border-color: #226a55;
+  background: #dceee5;
+}
+
+.drop-zone strong {
+  display: block;
+  font-size: 18px;
+  color: #183c31;
+}
+
+.drop-zone span {
+  display: block;
+  margin-top: 5px;
+  color: #5d675f;
+  overflow-wrap: anywhere;
+}
+
 .field {
   display: grid;
   gap: 7px;
@@ -136,6 +167,7 @@ p {
 .actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
 }
