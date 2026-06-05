@@ -17,6 +17,10 @@ The app is intentionally thin:
 4. Run `Convert` to create a temporary PPTX with those component settings.
 5. Click `Download PPTX` to choose where the generated file is saved.
 
+For visual reconstruction, drag a visual spec JSON produced from
+`prompts/visual-spec-chatgpt-pro.md`, click `Render Spec`, then download the
+PPTX.
+
 ## Development
 
 From this directory:

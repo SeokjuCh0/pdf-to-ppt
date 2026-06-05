@@ -1,0 +1,46 @@
+{
+  "canvas": {
+    "width": 1600,
+    "height": 900,
+    "width_in": 13.333,
+    "height_in": 7.5
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "x": 120,
+      "y": 72,
+      "w": 760,
+      "h": 80,
+      "text": "Editable visual reconstruction",
+      "font": "Arial",
+      "font_size": 28,
+      "color": "#1E2528",
+      "bold": true
+    },
+    {
+      "id": "callout",
+      "type": "rect",
+      "x": 118,
+      "y": 182,
+      "w": 840,
+      "h": 190,
+      "fill": "none",
+      "stroke": "#226A55",
+      "stroke_width": 1.5,
+      "dash": "sysDash"
+    },
+    {
+      "id": "rule",
+      "type": "line",
+      "x1": 120,
+      "y1": 420,
+      "x2": 960,
+      "y2": 420,
+      "stroke": "#B26A25",
+      "stroke_width": 2,
+      "dash": "sysDot"
+    }
+  ]
+}

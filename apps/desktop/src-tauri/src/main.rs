@@ -74,6 +74,14 @@ fn pick_pdf() -> Option<String> {
 }
 
 #[tauri::command]
+fn pick_visual_spec() -> Option<String> {
+    rfd::FileDialog::new()
+        .add_filter("Visual Spec JSON", &["json"])
+        .pick_file()
+        .map(|path| path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 fn check_java(java_cmd: String) -> bool {
     Command::new(java_cmd)
         .arg("-version")
@@ -178,15 +186,28 @@ fn download_pptx(source_path: String, default_path: Option<String>) -> Result<St
     Ok(target.to_string_lossy().to_string())
 }
 
+#[tauri::command]
+fn render_visual_spec(spec_path: String) -> Result<ProcessOutput, String> {
+    let pptx_path = default_temp_pptx_path(&spec_path);
+    if let Some(parent) = pptx_path.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    let mut command = core_command("visual-spec");
+    command.arg(spec_path).arg(pptx_path);
+    run_command(command)
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             pick_pdf,
+            pick_visual_spec,
             check_java,
             pick_output,
             inspect_pdf,
             convert_pdf,
-            download_pptx
+            download_pptx,
+            render_visual_spec
         ])
         .run(tauri::generate_context!())
         .expect("failed to run PDFPPT desktop app");

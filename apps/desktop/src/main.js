@@ -8,6 +8,7 @@ const state = {
   busy: false,
   generatedPptx: null,
   downloadDefaultPath: null,
+  visualSpecPath: null,
   components: [],
   componentSettings: {},
   selectedComponentId: null,
@@ -36,7 +37,7 @@ async function chooseDefaultJava() {
 function setBusy(busy, label = "Ready") {
   state.busy = busy;
   $("status").textContent = label;
-  for (const id of ["pickPdf", "inspect", "convert"]) {
+  for (const id of ["pickPdf", "pickSpec", "inspect", "convert", "renderSpec"]) {
     $(id).disabled = busy;
   }
   $("download").disabled = busy || !state.generatedPptx;
@@ -188,17 +189,38 @@ function defaultPptxPath(pdfPath) {
   return pdfPath.replace(/\.pdf$/i, ".pptx");
 }
 
+function defaultSpecPptxPath(specPath) {
+  return specPath.replace(/\.json$/i, ".pptx");
+}
+
 function selectPdf(path) {
   if (!path || !path.toLowerCase().endsWith(".pdf")) {
     setReport({ ok: false, error: "Drop or choose a PDF file." });
     return;
   }
   $("pdfPath").value = path;
+  $("specPath").value = "";
+  state.visualSpecPath = null;
   $("dropHint").textContent = path.split(/[\\/]/).pop();
   $("dropZone").classList.remove("drag-over");
   resetGenerated();
   resetComponents();
   setReport({ ok: true, command: "select", pdf: path });
+}
+
+function selectSpec(path) {
+  if (!path || !path.toLowerCase().endsWith(".json")) {
+    setReport({ ok: false, error: "Drop or choose a visual spec JSON file." });
+    return;
+  }
+  $("specPath").value = path;
+  $("pdfPath").value = "";
+  state.visualSpecPath = path;
+  $("dropHint").textContent = path.split(/[\\/]/).pop();
+  $("dropZone").classList.remove("drag-over");
+  resetGenerated();
+  resetComponents();
+  setReport({ ok: true, command: "select-spec", spec: path });
 }
 
 function parseStdout(result) {
@@ -250,10 +272,41 @@ async function runCommand(kind) {
   }
 }
 
+async function runVisualSpec() {
+  if (!state.visualSpecPath) {
+    setReport({ ok: false, error: "Choose or drop a visual spec JSON first." });
+    return;
+  }
+  setBusy(true, "Rendering");
+  try {
+    const result = await invoke("render_visual_spec", { specPath: state.visualSpecPath });
+    const payload = parseStdout(result);
+    setReport(payload);
+    if (payload.ok && payload.pptx) {
+      state.generatedPptx = payload.pptx;
+      state.downloadDefaultPath = defaultSpecPptxPath(state.visualSpecPath);
+      $("download").disabled = false;
+    }
+    $("status").textContent = result.status === 0 ? "Done" : "Failed";
+  } catch (error) {
+    setReport({ ok: false, error: String(error) });
+    $("status").textContent = "Failed";
+  } finally {
+    setBusy(false, $("status").textContent);
+  }
+}
+
 $("pickPdf").addEventListener("click", async () => {
   const path = await invoke("pick_pdf");
   if (path) {
     selectPdf(path);
+  }
+});
+
+$("pickSpec").addEventListener("click", async () => {
+  const path = await invoke("pick_visual_spec");
+  if (path) {
+    selectSpec(path);
   }
 });
 
@@ -279,6 +332,7 @@ $("download").addEventListener("click", async () => {
 
 $("inspect").addEventListener("click", () => runCommand("inspect"));
 $("convert").addEventListener("click", () => runCommand("convert"));
+$("renderSpec").addEventListener("click", () => runVisualSpec());
 
 for (const id of [
   "componentInclude",
@@ -306,7 +360,11 @@ getCurrentWebview().onDragDropEvent((event) => {
   if (event.payload.type === "drop") {
     $("dropZone").classList.remove("drag-over");
     const [path] = event.payload.paths || [];
-    selectPdf(path);
+    if (path?.toLowerCase().endsWith(".json")) {
+      selectSpec(path);
+    } else {
+      selectPdf(path);
+    }
   }
 });
 

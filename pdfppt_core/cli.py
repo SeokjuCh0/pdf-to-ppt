@@ -17,6 +17,7 @@ from pptx import Presentation
 from scripts.extract_pdf_json import extract_pdf_json, find_parser_jar
 from scripts.json_to_pptx import convert_json_to_pptx, grouped_by_page, iter_renderable_objects, text_from_object
 from scripts.pdf_to_pptx import copy_json_with_external_assets
+from scripts.visual_spec_to_pptx import render_visual_spec
 
 
 def emit(payload: dict[str, Any]) -> None:
@@ -215,6 +216,20 @@ def command_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_visual_spec(args: argparse.Namespace) -> int:
+    spec = args.spec.expanduser().resolve()
+    pptx = args.pptx.expanduser().resolve()
+    render_visual_spec(spec, pptx)
+    emit({
+        "ok": True,
+        "command": "visual-spec",
+        "spec": str(spec),
+        "pptx": str(pptx),
+        "pptx_summary": summarize_pptx(pptx),
+    })
+    return 0
+
+
 def command_app(args: argparse.Namespace) -> int:
     desktop = Path(__file__).resolve().parents[1] / "apps" / "desktop"
     if not desktop.is_dir():
@@ -252,6 +267,11 @@ def build_parser() -> argparse.ArgumentParser:
     verify_parser.add_argument("pptx", type=Path)
     verify_parser.add_argument("--json", type=Path, help="Optional parser JSON to include in the report.")
     verify_parser.set_defaults(func=command_verify)
+
+    visual_parser = subparsers.add_parser("visual-spec", help="Render a vision-produced component spec JSON to PPTX.")
+    visual_parser.add_argument("spec", type=Path)
+    visual_parser.add_argument("pptx", type=Path)
+    visual_parser.set_defaults(func=command_visual_spec)
 
     app_parser = subparsers.add_parser("app", help="Launch the local desktop app in development mode.")
     app_parser.set_defaults(func=command_app)

@@ -78,6 +78,17 @@ python3 -m pdfppt_core convert input.pdf output.pptx --json-output output.json
 python3 -m pdfppt_core verify output.pptx --json output.json
 ```
 
+For visually complex slides, use a vision model to produce a native component
+spec and render it without adding a local OCR/vision dependency:
+
+```bash
+python3 -m pdfppt_core visual-spec visual-spec.json output.pptx
+```
+
+Use `prompts/visual-spec-chatgpt-pro.md` to ask ChatGPT Pro for that JSON. In
+this workflow OpenDataLoader is only supporting evidence for text and bounding
+boxes; the screenshot or PDF image is the visual source of truth.
+
 If the source PDF page size is known, pass it in PDF points:
 
 ```bash
@@ -122,6 +133,10 @@ Use `prompts/chatgpt-pro.md` only for:
 - drafting repair instructions.
 
 If parser JSON is needed, run the local scripts first and upload the JSON.
+
+For visual reconstruction, use `prompts/visual-spec-chatgpt-pro.md` instead.
+It asks ChatGPT Pro to output a JSON component spec that this repo renders into
+native PowerPoint text boxes and shapes.
 
 ## License And Attribution
 

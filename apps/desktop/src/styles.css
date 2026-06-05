@@ -151,6 +151,13 @@ p {
   overflow-wrap: anywhere;
 }
 
+.drop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .field {
   display: grid;
   gap: 7px;

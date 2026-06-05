@@ -20,15 +20,22 @@
           <div class="controls">
             <div class="drop-zone" id="dropZone">
               <div>
-                <strong>Drop PDF here</strong>
+                <strong>Drop PDF or visual spec JSON here</strong>
                 <span id="dropHint">or choose a file from your computer</span>
               </div>
-              <button id="pickPdf" type="button">Choose PDF</button>
+              <div class="drop-actions">
+                <button id="pickPdf" type="button">Choose PDF</button>
+                <button id="pickSpec" type="button">Choose JSON</button>
+              </div>
             </div>
 
             <label class="field">
               <span>Selected PDF</span>
               <input id="pdfPath" placeholder="No PDF selected" autocomplete="off" readonly />
+            </label>
+            <label class="field">
+              <span>Selected Visual Spec</span>
+              <input id="specPath" placeholder="No visual spec selected" autocomplete="off" readonly />
             </label>
 
             <div class="option-grid">
@@ -45,6 +52,7 @@
             <div class="actions">
               <button id="inspect" type="button">Inspect</button>
               <button id="convert" class="primary" type="button">Convert</button>
+              <button id="renderSpec" type="button">Render Spec</button>
               <button id="download" type="button" disabled>Download PPTX</button>
             </div>
           </div>
