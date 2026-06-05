@@ -89,6 +89,28 @@ Use `prompts/visual-spec-chatgpt-pro.md` to ask ChatGPT Pro for that JSON. In
 this workflow OpenDataLoader is only supporting evidence for text and bounding
 boxes; the screenshot or PDF image is the visual source of truth.
 
+To recover fine graph labels, axis labels, legend text, and other PDF text that
+OpenDataLoader grouped into chart images, render the raw PDF text layer:
+
+```bash
+python3 -m pdfppt_core raw-text input.pdf output-text-layer.pptx --pages 1
+```
+
+This uses Poppler `pdftotext -bbox-layout`, not Java. It only extracts
+selectable PDF text; chart bars/areas still need a visual spec `chart`
+component when they should become adjustable PowerPoint charts.
+
+On macOS, use the OS Vision OCR layer for text embedded inside chart images:
+
+```bash
+python3 -m pdfppt_core ocr-text input.pdf output-ocr-layer.pptx --pages 1
+```
+
+This keeps the app lightweight because it uses the operating system OCR engine
+instead of bundling a local OCR or vision model. It restores chart labels as
+editable text boxes; the chart geometry itself still requires either a visual
+spec `chart` component or a later chart-reconstruction pass.
+
 If the source PDF page size is known, pass it in PDF points:
 
 ```bash

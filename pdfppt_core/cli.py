@@ -16,7 +16,9 @@ from pptx import Presentation
 
 from scripts.extract_pdf_json import extract_pdf_json, find_parser_jar
 from scripts.json_to_pptx import convert_json_to_pptx, grouped_by_page, iter_renderable_objects, text_from_object
+from scripts.macos_vision_ocr_to_pptx import convert_macos_vision_ocr_to_pptx
 from scripts.pdf_to_pptx import copy_json_with_external_assets
+from scripts.raw_pdf_text_to_pptx import convert_raw_pdf_text_to_pptx
 from scripts.visual_spec_to_pptx import render_visual_spec
 
 
@@ -230,6 +232,49 @@ def command_visual_spec(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_raw_text(args: argparse.Namespace) -> int:
+    pdf = args.pdf.expanduser().resolve()
+    pptx = args.pptx.expanduser().resolve()
+    convert_raw_pdf_text_to_pptx(
+        pdf,
+        pptx,
+        pages=args.pages,
+        pdftotext=args.pdftotext,
+        font=args.fallback_font,
+    )
+    emit({
+        "ok": True,
+        "command": "raw-text",
+        "pdf": str(pdf),
+        "pptx": str(pptx),
+        "pptx_summary": summarize_pptx(pptx),
+    })
+    return 0
+
+
+def command_ocr_text(args: argparse.Namespace) -> int:
+    pdf = args.pdf.expanduser().resolve()
+    pptx = args.pptx.expanduser().resolve()
+    convert_macos_vision_ocr_to_pptx(
+        pdf,
+        pptx,
+        pages=args.pages,
+        dpi=args.dpi,
+        pdftoppm=args.pdftoppm,
+        font=args.fallback_font,
+        languages=[value.strip() for value in args.languages.split(",") if value.strip()],
+    )
+    emit({
+        "ok": True,
+        "command": "ocr-text",
+        "engine": "macos-vision",
+        "pdf": str(pdf),
+        "pptx": str(pptx),
+        "pptx_summary": summarize_pptx(pptx),
+    })
+    return 0
+
+
 def command_app(args: argparse.Namespace) -> int:
     desktop = Path(__file__).resolve().parents[1] / "apps" / "desktop"
     if not desktop.is_dir():
@@ -272,6 +317,24 @@ def build_parser() -> argparse.ArgumentParser:
     visual_parser.add_argument("spec", type=Path)
     visual_parser.add_argument("pptx", type=Path)
     visual_parser.set_defaults(func=command_visual_spec)
+
+    raw_text_parser = subparsers.add_parser("raw-text", help="Render every Poppler PDF text line as native PPTX text.")
+    raw_text_parser.add_argument("pdf", type=Path)
+    raw_text_parser.add_argument("pptx", type=Path)
+    raw_text_parser.add_argument("--pages", help='One Poppler page range, for example "1" or "3-5".')
+    raw_text_parser.add_argument("--pdftotext", default="pdftotext")
+    raw_text_parser.add_argument("--fallback-font", default="Pretendard")
+    raw_text_parser.set_defaults(func=command_raw_text)
+
+    ocr_text_parser = subparsers.add_parser("ocr-text", help="Render OCR text as native PPTX text boxes.")
+    ocr_text_parser.add_argument("pdf", type=Path)
+    ocr_text_parser.add_argument("pptx", type=Path)
+    ocr_text_parser.add_argument("--pages", help='One Poppler page range, for example "1" or "3-5".')
+    ocr_text_parser.add_argument("--dpi", type=int, default=144)
+    ocr_text_parser.add_argument("--pdftoppm", default="pdftoppm")
+    ocr_text_parser.add_argument("--fallback-font", default="Pretendard")
+    ocr_text_parser.add_argument("--languages", default="ko-KR,en-US")
+    ocr_text_parser.set_defaults(func=command_ocr_text)
 
     app_parser = subparsers.add_parser("app", help="Launch the local desktop app in development mode.")
     app_parser.set_defaults(func=command_app)

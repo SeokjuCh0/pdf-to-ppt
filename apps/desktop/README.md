@@ -21,6 +21,13 @@ For visual reconstruction, drag a visual spec JSON produced from
 `prompts/visual-spec-chatgpt-pro.md`, click `Render Spec`, then download the
 PPTX.
 
+For graph labels or dense chart text that OpenDataLoader misses, choose a PDF
+and click `Text Layer`. This uses Poppler raw text bounding boxes and does not
+require Java.
+
+On macOS, click `OCR Layer` when graph labels are embedded inside chart images.
+It uses the built-in Vision OCR engine, so no OCR model is bundled with the app.
+
 ## Development
 
 From this directory:

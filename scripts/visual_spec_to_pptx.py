@@ -12,6 +12,8 @@ from typing import Any
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.chart.data import CategoryChartData
+from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_LEGEND_POSITION
 from pptx.enum.dml import MSO_LINE_DASH_STYLE
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.oxml.ns import qn
@@ -29,6 +31,20 @@ DASH_STYLES = {
     "dot": MSO_LINE_DASH_STYLE.ROUND_DOT,
     "longdash": MSO_LINE_DASH_STYLE.LONG_DASH,
     "dashdot": MSO_LINE_DASH_STYLE.DASH_DOT,
+}
+CHART_TYPES = {
+    "column": XL_CHART_TYPE.COLUMN_CLUSTERED,
+    "clustered-column": XL_CHART_TYPE.COLUMN_CLUSTERED,
+    "stacked-column": XL_CHART_TYPE.COLUMN_STACKED,
+    "stacked-column-100": XL_CHART_TYPE.COLUMN_STACKED_100,
+    "bar": XL_CHART_TYPE.BAR_CLUSTERED,
+    "clustered-bar": XL_CHART_TYPE.BAR_CLUSTERED,
+    "stacked-bar": XL_CHART_TYPE.BAR_STACKED,
+    "stacked-bar-100": XL_CHART_TYPE.BAR_STACKED_100,
+    "area": XL_CHART_TYPE.AREA,
+    "stacked-area": XL_CHART_TYPE.AREA_STACKED,
+    "stacked-area-100": XL_CHART_TYPE.AREA_STACKED_100,
+    "line": XL_CHART_TYPE.LINE,
 }
 
 
@@ -175,6 +191,58 @@ def add_image(slide: Any, component: dict[str, Any], sx: float, sy: float, base_
         slide.shapes.add_picture(str(image_path), *bounds(component, sx, sy))
 
 
+def chart_type(component: dict[str, Any]) -> XL_CHART_TYPE:
+    key = str(component.get("chart_type") or component.get("kind") or "column").lower().replace("_", "-")
+    return CHART_TYPES.get(key, XL_CHART_TYPE.COLUMN_CLUSTERED)
+
+
+def add_chart(slide: Any, component: dict[str, Any], sx: float, sy: float) -> None:
+    categories = component.get("categories")
+    series_items = component.get("series")
+    if not isinstance(categories, list) or not isinstance(series_items, list):
+        return
+    chart_data = CategoryChartData()
+    chart_data.categories = [str(value) for value in categories]
+    added_series = 0
+    for series in series_items:
+        if not isinstance(series, dict):
+            continue
+        values = series.get("values")
+        if not isinstance(values, list):
+            continue
+        chart_data.add_series(str(series.get("name") or ""), [float(value) for value in values])
+        added_series += 1
+    if not added_series:
+        return
+
+    left, top, width, height = bounds(component, sx, sy)
+    frame = slide.shapes.add_chart(chart_type(component), left, top, width, height, chart_data)
+    chart = frame.chart
+    chart.has_legend = bool(component.get("legend", True))
+    if chart.has_legend:
+        chart.legend.position = XL_LEGEND_POSITION.BOTTOM
+        chart.legend.include_in_layout = False
+    chart.has_title = bool(component.get("title"))
+    if chart.has_title:
+        chart.chart_title.text_frame.text = str(component["title"])
+    chart.value_axis.visible = bool(component.get("value_axis", True))
+    chart.category_axis.visible = bool(component.get("category_axis", True))
+    plot = chart.plots[0]
+    if component.get("data_labels"):
+        plot.has_data_labels = True
+        plot.data_labels.show_value = True
+        plot.data_labels.position = XL_LABEL_POSITION.CENTER
+    for index, series in enumerate(series_items):
+        if not isinstance(series, dict) or index >= len(chart.series):
+            continue
+        fill = color(series.get("color") or series.get("fill"))
+        if fill:
+            chart_series = chart.series[index]
+            chart_series.format.fill.solid()
+            chart_series.format.fill.fore_color.rgb = fill
+            chart_series.format.line.color.rgb = fill
+
+
 def render_visual_spec(spec_path: Path, pptx_path: Path) -> Path:
     spec = json.loads(spec_path.read_text(encoding="utf-8"))
     slide_width_pt, slide_height_pt, sx, sy = canvas_scale(spec)
@@ -197,6 +265,8 @@ def render_visual_spec(spec_path: Path, pptx_path: Path) -> Path:
             add_line(slide, component, sx, sy)
         elif kind in {"image", "picture"}:
             add_image(slide, component, sx, sy, base_dir)
+        elif kind in {"chart", "native-chart"}:
+            add_chart(slide, component, sx, sy)
 
     pptx_path.parent.mkdir(parents=True, exist_ok=True)
     prs.save(pptx_path)

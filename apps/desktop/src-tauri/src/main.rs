@@ -197,6 +197,34 @@ fn render_visual_spec(spec_path: String) -> Result<ProcessOutput, String> {
     run_command(command)
 }
 
+#[tauri::command]
+fn raw_text_pdf(pdf_path: String, pages: Option<String>) -> Result<ProcessOutput, String> {
+    let pptx_path = default_temp_pptx_path(&pdf_path);
+    if let Some(parent) = pptx_path.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    let mut command = core_command("raw-text");
+    command.arg(pdf_path).arg(pptx_path);
+    if let Some(pages) = pages.filter(|value| !value.trim().is_empty()) {
+        command.arg("--pages").arg(pages);
+    }
+    run_command(command)
+}
+
+#[tauri::command]
+fn ocr_text_pdf(pdf_path: String, pages: Option<String>) -> Result<ProcessOutput, String> {
+    let pptx_path = default_temp_pptx_path(&pdf_path);
+    if let Some(parent) = pptx_path.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    let mut command = core_command("ocr-text");
+    command.arg(pdf_path).arg(pptx_path);
+    if let Some(pages) = pages.filter(|value| !value.trim().is_empty()) {
+        command.arg("--pages").arg(pages);
+    }
+    run_command(command)
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -207,7 +235,9 @@ fn main() {
             inspect_pdf,
             convert_pdf,
             download_pptx,
-            render_visual_spec
+            render_visual_spec,
+            raw_text_pdf,
+            ocr_text_pdf
         ])
         .run(tauri::generate_context!())
         .expect("failed to run PDFPPT desktop app");

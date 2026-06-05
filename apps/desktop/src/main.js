@@ -37,7 +37,7 @@ async function chooseDefaultJava() {
 function setBusy(busy, label = "Ready") {
   state.busy = busy;
   $("status").textContent = label;
-  for (const id of ["pickPdf", "pickSpec", "inspect", "convert", "renderSpec"]) {
+  for (const id of ["pickPdf", "pickSpec", "inspect", "convert", "rawText", "ocrText", "renderSpec"]) {
     $(id).disabled = busy;
   }
   $("download").disabled = busy || !state.generatedPptx;
@@ -296,6 +296,62 @@ async function runVisualSpec() {
   }
 }
 
+async function runRawText() {
+  const pdfPath = $("pdfPath").value.trim();
+  if (!pdfPath) {
+    setReport({ ok: false, error: "Choose a PDF file first." });
+    return;
+  }
+  setBusy(true, "Extracting text");
+  try {
+    const result = await invoke("raw_text_pdf", {
+      pdfPath,
+      pages: $("pages").value.trim() || null,
+    });
+    const payload = parseStdout(result);
+    setReport(payload);
+    if (payload.ok && payload.pptx) {
+      state.generatedPptx = payload.pptx;
+      state.downloadDefaultPath = defaultPptxPath(pdfPath);
+      $("download").disabled = false;
+    }
+    $("status").textContent = result.status === 0 ? "Done" : "Failed";
+  } catch (error) {
+    setReport({ ok: false, error: String(error) });
+    $("status").textContent = "Failed";
+  } finally {
+    setBusy(false, $("status").textContent);
+  }
+}
+
+async function runOcrText() {
+  const pdfPath = $("pdfPath").value.trim();
+  if (!pdfPath) {
+    setReport({ ok: false, error: "Choose a PDF file first." });
+    return;
+  }
+  setBusy(true, "Running OCR");
+  try {
+    const result = await invoke("ocr_text_pdf", {
+      pdfPath,
+      pages: $("pages").value.trim() || null,
+    });
+    const payload = parseStdout(result);
+    setReport(payload);
+    if (payload.ok && payload.pptx) {
+      state.generatedPptx = payload.pptx;
+      state.downloadDefaultPath = defaultPptxPath(pdfPath);
+      $("download").disabled = false;
+    }
+    $("status").textContent = result.status === 0 ? "Done" : "Failed";
+  } catch (error) {
+    setReport({ ok: false, error: String(error) });
+    $("status").textContent = "Failed";
+  } finally {
+    setBusy(false, $("status").textContent);
+  }
+}
+
 $("pickPdf").addEventListener("click", async () => {
   const path = await invoke("pick_pdf");
   if (path) {
@@ -332,6 +388,8 @@ $("download").addEventListener("click", async () => {
 
 $("inspect").addEventListener("click", () => runCommand("inspect"));
 $("convert").addEventListener("click", () => runCommand("convert"));
+$("rawText").addEventListener("click", () => runRawText());
+$("ocrText").addEventListener("click", () => runOcrText());
 $("renderSpec").addEventListener("click", () => runVisualSpec());
 
 for (const id of [

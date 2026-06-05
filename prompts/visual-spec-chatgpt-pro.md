@@ -25,9 +25,11 @@ visual-spec` can render with native PowerPoint shapes and text boxes.
    full-width/half-width characters, and spacing.
 4. Represent text as `type: "text"` components.
 5. Represent decorations as native shape components: `rect` or `line`.
-6. Use `dash: "sysDash"` or `dash: "sysDot"` for dotted/dashed borders.
-7. Do not place a full-slide raster background.
-8. Use raster images only for actual image/photo regions that cannot reasonably
+6. Represent adjustable graphs as `type: "chart"` components whenever the
+   categories, series names, and values are readable.
+7. Use `dash: "sysDash"` or `dash: "sysDot"` for dotted/dashed borders.
+8. Do not place a full-slide raster background.
+9. Use raster images only for actual image/photo regions that cannot reasonably
    be represented as native shapes.
 
 ## Output
@@ -80,6 +82,22 @@ Return JSON only. Do not wrap it in Markdown.
       "stroke": "#B26A25",
       "stroke_width": 2,
       "dash": "sysDot"
+    },
+    {
+      "id": "chart-1",
+      "type": "chart",
+      "chart_type": "stacked-column-100",
+      "x": 120,
+      "y": 480,
+      "w": 760,
+      "h": 280,
+      "categories": ["2023", "2024", "2025"],
+      "series": [
+        { "name": "금융", "values": [17.0, 12.0, 19.0], "color": "#FAC858" },
+        { "name": "부동산", "values": [29.8, 27.0, 25.8], "color": "#4FA8A5" }
+      ],
+      "legend": true,
+      "data_labels": true
     }
   ]
 }
@@ -93,5 +111,8 @@ Return JSON only. Do not wrap it in Markdown.
   instead of `font_size`; the local renderer will normalize it to points.
 - Colors must be exact `#RRGGBB` values sampled from the image.
 - Prefer native `text`, `rect`, and `line` components over images.
+- For chart components, valid `chart_type` values include `stacked-column`,
+  `stacked-column-100`, `stacked-bar`, `stacked-bar-100`, `stacked-area`,
+  `stacked-area-100`, `column`, `bar`, `area`, and `line`.
 - Do not invent template elements that are not visible in the original.
 - Do not chase pixel perfection; prioritize flaws viewers would notice.
