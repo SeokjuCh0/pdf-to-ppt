@@ -74,6 +74,18 @@ fn pick_pdf() -> Option<String> {
 }
 
 #[tauri::command]
+fn check_java(java_cmd: String) -> bool {
+    Command::new(java_cmd)
+        .arg("-version")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false)
+}
+
+#[tauri::command]
 fn pick_output(default_path: Option<String>) -> Option<String> {
     let mut dialog = rfd::FileDialog::new().add_filter("PowerPoint", &["pptx"]);
     if let Some(path) = default_path {
@@ -156,6 +168,7 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             pick_pdf,
+            check_java,
             pick_output,
             inspect_pdf,
             convert_pdf,

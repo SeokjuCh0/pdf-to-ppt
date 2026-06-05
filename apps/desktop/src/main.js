@@ -10,6 +10,26 @@ const state = {
   downloadDefaultPath: null,
 };
 
+const defaultJavaCandidates = [
+  "/opt/homebrew/opt/openjdk/bin/java",
+  "/usr/local/opt/openjdk/bin/java",
+  "java",
+];
+
+async function chooseDefaultJava() {
+  for (const candidate of defaultJavaCandidates) {
+    try {
+      if (await invoke("check_java", { javaCmd: candidate })) {
+        $("javaCmd").value = candidate;
+        return;
+      }
+    } catch {
+      // Try the next candidate.
+    }
+  }
+  $("javaCmd").value = "java";
+}
+
 function setBusy(busy, label = "Ready") {
   state.busy = busy;
   $("status").textContent = label;
@@ -149,3 +169,5 @@ getCurrentWebview().onDragDropEvent((event) => {
     selectPdf(path);
   }
 });
+
+chooseDefaultJava();

@@ -44,6 +44,15 @@ Override the converter binary with:
 PDFPPT_CORE_BIN=/path/to/pdfppt-core npm run tauri -- dev
 ```
 
+On macOS with Homebrew OpenJDK, the UI auto-detects:
+
+```text
+/opt/homebrew/opt/openjdk/bin/java
+```
+
+If conversion reports that Java cannot be located, put that path in the Java
+field before running `Inspect` or `Convert`.
+
 ## Packaging Target
 
 The production build should bundle a platform-specific `pdfppt-core` sidecar:
