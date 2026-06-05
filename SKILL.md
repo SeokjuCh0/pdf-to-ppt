@@ -27,6 +27,12 @@ Build the vendored parser when Java 11+ and Maven are available:
 scripts/build_parser.sh --skip-tests
 ```
 
+On macOS with Homebrew OpenJDK, prefer:
+
+```bash
+PATH=/opt/homebrew/opt/openjdk/bin:$PATH scripts/build_parser.sh --skip-tests
+```
+
 The script builds from `vendor/opendataloader-pdf/java` and copies the parser
 JAR to `build/opendataloader/opendataloader-pdf-cli.jar`.
 
@@ -128,4 +134,6 @@ scripts/build_parser.sh --skip-tests
 ```
 
 For protected local PDFs, report macOS permission errors directly instead of
-guessing from inaccessible files.
+guessing from inaccessible files. If Java cannot read a file under Downloads,
+Desktop, or Documents, move the PDF to a readable workspace path or grant the
+terminal/Java process file access.

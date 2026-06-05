@@ -86,9 +86,31 @@ def extract_pdf_json(
     command.append(str(pdf_path))
 
     try:
-        subprocess.run(command, check=True)
+        completed = subprocess.run(command, check=False, capture_output=True, text=True)
     except FileNotFoundError as exc:
         raise RuntimeError(f"Java command not found: {java_cmd}") from exc
+    if completed.returncode != 0:
+        output = "\n".join(part for part in [completed.stdout, completed.stderr] if part).strip()
+        if quiet and not output:
+            diagnostic_command = [part for part in command if part != "--quiet"]
+            diagnostic = subprocess.run(diagnostic_command, check=False, capture_output=True, text=True)
+            output = "\n".join(part for part in [diagnostic.stdout, diagnostic.stderr] if part).strip()
+        message = f"Parser failed with exit code {completed.returncode}."
+        if output:
+            message = f"{message}\n{output}"
+        if "Operation not permitted" in output:
+            message = (
+                f"{message}\n"
+                "Hint: macOS privacy controls can block Java from reading protected folders "
+                "such as Downloads/Desktop/Documents. Move the PDF to a folder this process "
+                "can read or grant the terminal/Java process file access."
+            )
+        raise RuntimeError(message)
+    if not quiet:
+        if completed.stdout:
+            print(completed.stdout, end="")
+        if completed.stderr:
+            print(completed.stderr, end="", file=sys.stderr)
 
     json_path = expected_json_path(pdf_path, output_dir)
     if not json_path.is_file():

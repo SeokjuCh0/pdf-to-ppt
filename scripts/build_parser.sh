@@ -7,21 +7,27 @@ ARTIFACT_DIR="$ROOT_DIR/build/opendataloader"
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/build_parser.sh [--skip-tests]
+Usage: scripts/build_parser.sh [--skip-tests] [--release-artifacts]
 
 Build the vendored OpenDataLoader PDF parser from repository source.
 
 Options:
-  --skip-tests    Pass -DskipTests to Maven.
-  -h, --help      Show this help.
+  --skip-tests         Pass -DskipTests to Maven.
+  --release-artifacts  Enable the upstream release profile.
+  -h, --help           Show this help.
 USAGE
 }
 
 SKIP_TESTS=0
+RELEASE_ARTIFACTS=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --skip-tests)
       SKIP_TESTS=1
+      shift
+      ;;
+    --release-artifacts)
+      RELEASE_ARTIFACTS=1
       shift
       ;;
     -h|--help)
@@ -43,6 +49,9 @@ fi
 
 if ! command -v java >/dev/null 2>&1 || ! java -version >/dev/null 2>&1; then
   echo "Java runtime not found or not usable. Install Java 11+ before building the vendored parser." >&2
+  if [[ -x /opt/homebrew/opt/openjdk/bin/java ]]; then
+    echo "Homebrew OpenJDK exists; try: PATH=/opt/homebrew/opt/openjdk/bin:\$PATH scripts/build_parser.sh --skip-tests" >&2
+  fi
   exit 1
 fi
 
@@ -51,7 +60,10 @@ if ! command -v mvn >/dev/null 2>&1 || ! mvn -version >/dev/null 2>&1; then
   exit 1
 fi
 
-MAVEN_ARGS=(-B clean package -P release)
+MAVEN_ARGS=(-B clean package)
+if [[ "$RELEASE_ARTIFACTS" -eq 1 ]]; then
+  MAVEN_ARGS+=(-P release)
+fi
 if [[ "$SKIP_TESTS" -eq 1 ]]; then
   MAVEN_ARGS+=(-DskipTests)
 fi

@@ -41,6 +41,13 @@ No global `opendataloader-pdf` CLI package is required or used by the scripts.
 scripts/build_parser.sh --skip-tests
 ```
 
+If Java was installed through Homebrew on macOS and `/usr/bin/java` still cannot
+find it, run:
+
+```bash
+PATH=/opt/homebrew/opt/openjdk/bin:$PATH scripts/build_parser.sh --skip-tests
+```
+
 This builds from:
 
 ```text
@@ -57,6 +64,7 @@ build/opendataloader/opendataloader-pdf-cli.jar
 
 ```bash
 scripts/pdf_to_pptx.py input.pdf output.pptx \
+  --java /opt/homebrew/opt/openjdk/bin/java \
   --table-method cluster \
   --reading-order xycut \
   --image-output external
@@ -112,6 +120,7 @@ scripts/build_parser.sh --skip-tests
 
 Current known environment limitations from the original build session:
 
-- local Java runtime was not installed,
-- user sample files under `/Users/sj/Downloads` were blocked by macOS file
-  permissions from this session.
+- Java/Maven may need to be installed before building the vendored parser.
+- macOS privacy controls can block Java from reading files under
+  `/Users/*/Downloads`, Desktop, or Documents. Move the PDF to a readable
+  workspace path or grant the terminal/Java process file access.
