@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import sys
 import tempfile
 import unittest
@@ -9,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from json_to_pptx import bbox_to_rect, convert_json_to_pptx, strip_subset_prefix
+from pdf_to_pptx import copy_json_with_external_assets
 
 
 class JsonToPptxTests(unittest.TestCase):
@@ -45,6 +47,68 @@ class JsonToPptxTests(unittest.TestCase):
             self.assertIn("2025 한국 부자 보고서", texts)
             self.assertIn("항목", texts)
             self.assertIn("1.0%", texts)
+
+    def test_nested_list_items_are_rendered_as_text_boxes(self):
+        data = {
+            "file name": "list.pdf",
+            "number of pages": 1,
+            "page width": 400,
+            "page height": 300,
+            "kids": [
+                {
+                    "type": "list",
+                    "page number": 1,
+                    "bounding box": [20, 120, 380, 260],
+                    "list items": [
+                        {
+                            "type": "list item",
+                            "page number": 1,
+                            "bounding box": [20, 200, 380, 240],
+                            "font": "ABCDEE+Pretendard-Regular",
+                            "font size": 10,
+                            "content": "첫 번째 본문 문단",
+                        },
+                        {
+                            "type": "list item",
+                            "page number": 1,
+                            "bounding box": [20, 130, 380, 170],
+                            "font": "ABCDEE+Pretendard-Regular",
+                            "font size": 10,
+                            "content": "두 번째 본문 문단",
+                        },
+                    ],
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "list.json"
+            fixture.write_text(json.dumps(data), encoding="utf-8")
+            output = Path(tmp) / "list.pptx"
+            convert_json_to_pptx(fixture, output)
+
+            prs = Presentation(output)
+            texts = [shape.text for shape in prs.slides[0].shapes if hasattr(shape, "text")]
+            self.assertIn("첫 번째 본문 문단", texts)
+            self.assertIn("두 번째 본문 문단", texts)
+
+    def test_json_output_keeps_external_image_assets_reusable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source_dir = Path(tmp) / "source"
+            target_dir = Path(tmp) / "target"
+            image = source_dir / "fixture_images" / "imageFile1.png"
+            image.parent.mkdir(parents=True)
+            image.write_bytes(b"fake image")
+            json_path = source_dir / "fixture.json"
+            json_path.write_text(
+                json.dumps({"kids": [{"type": "image", "source": "fixture_images/imageFile1.png"}]}),
+                encoding="utf-8",
+            )
+
+            target = target_dir / "fixture.json"
+            copy_json_with_external_assets(json_path, target)
+
+            self.assertTrue(target.exists())
+            self.assertEqual((target_dir / "fixture_images" / "imageFile1.png").read_bytes(), b"fake image")
 
 
 if __name__ == "__main__":

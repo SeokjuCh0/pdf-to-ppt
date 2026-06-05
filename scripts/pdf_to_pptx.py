@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import json
+import shutil
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from extract_pdf_json import extract_pdf_json, find_parser_jar
 from json_to_pptx import convert_json_to_pptx
@@ -28,6 +31,35 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--page-height", type=float, help="Source page height in PDF points.")
     parser.add_argument("--fallback-font", default="Pretendard")
     return parser
+
+
+def iter_external_sources(value: Any) -> list[str]:
+    sources: list[str] = []
+    if isinstance(value, dict):
+        source = value.get("source")
+        if isinstance(source, str) and source:
+            sources.append(source)
+        for child in value.values():
+            sources.extend(iter_external_sources(child))
+    elif isinstance(value, list):
+        for child in value:
+            sources.extend(iter_external_sources(child))
+    return sources
+
+
+def copy_json_with_external_assets(json_path: Path, target: Path) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(json_path.read_bytes())
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    for source in sorted(set(iter_external_sources(data))):
+        source_path = (json_path.parent / source).resolve()
+        if not source_path.is_file():
+            continue
+        target_path = target.parent / source
+        if source_path == target_path.resolve():
+            continue
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, target_path)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -55,9 +87,7 @@ def main(argv: list[str] | None = None) -> int:
                 fallback_font=args.fallback_font,
             )
             if args.json_output:
-                target = args.json_output.expanduser().resolve()
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(json_path.read_bytes())
+                copy_json_with_external_assets(json_path, args.json_output.expanduser().resolve())
         else:
             with tempfile.TemporaryDirectory(prefix="pdf-to-pptx-") as tmp:
                 json_path = extract_pdf_json(
@@ -78,9 +108,7 @@ def main(argv: list[str] | None = None) -> int:
                     fallback_font=args.fallback_font,
                 )
                 if args.json_output:
-                    target = args.json_output.expanduser().resolve()
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    target.write_bytes(json_path.read_bytes())
+                    copy_json_with_external_assets(json_path, args.json_output.expanduser().resolve())
         print(args.pptx.expanduser().resolve())
         return 0
     except Exception as exc:

@@ -138,6 +138,20 @@ def grouped_by_page(data: dict[str, Any]) -> dict[int, list[dict[str, Any]]]:
     return grouped
 
 
+def iter_renderable_objects(items: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+    for obj in items:
+        if not isinstance(obj, dict):
+            continue
+        obj_type = str(obj.get("type") or "").lower()
+        if obj_type in TABLE_TYPES or obj_type in IMAGE_TYPES or obj_type in TEXT_TYPES:
+            yield obj
+            continue
+        for key in ("kids", "list items", "toc items"):
+            children = obj.get(key)
+            if isinstance(children, list):
+                yield from iter_renderable_objects(children)
+
+
 def metadata_page_size(data: dict[str, Any], page_number: int) -> tuple[float, float] | None:
     pages = data.get("pages")
     if isinstance(pages, list):
@@ -320,7 +334,7 @@ def convert_json_to_pptx(
         scale = min(slide_width / native_width, slide_height / native_height) if native_width and native_height else 1.0
         font_scale = scale
         slide = prs.slides.add_slide(blank_layout)
-        for obj in grouped[page]:
+        for obj in iter_renderable_objects(grouped[page]):
             obj_type = str(obj.get("type") or "").lower()
             if obj_type in TABLE_TYPES:
                 add_table(slide, obj, native_height, scale, font_scale, fallback_font)
