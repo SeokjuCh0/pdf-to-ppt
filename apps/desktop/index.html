@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDFPPT</title>
+  </head>
+  <body>
+    <main id="app">
+      <section class="shell">
+        <header class="topbar">
+          <div>
+            <h1>PDFPPT</h1>
+            <p>Local PDF to editable PowerPoint converter</p>
+          </div>
+          <span class="status" id="status">Ready</span>
+        </header>
+
+        <section class="workspace" aria-label="Conversion workspace">
+          <div class="controls">
+            <label class="field">
+              <span>PDF</span>
+              <div class="path-row">
+                <input id="pdfPath" placeholder="Choose a PDF file" autocomplete="off" />
+                <button id="pickPdf" type="button">Choose</button>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>Output PPTX</span>
+              <div class="path-row">
+                <input id="pptxPath" placeholder="Choose output path" autocomplete="off" />
+                <button id="pickPptx" type="button">Save As</button>
+              </div>
+            </label>
+
+            <div class="option-grid">
+              <label class="field">
+                <span>Java</span>
+                <input id="javaCmd" value="java" autocomplete="off" />
+              </label>
+              <label class="field">
+                <span>Pages</span>
+                <input id="pages" placeholder="All pages" autocomplete="off" />
+              </label>
+            </div>
+
+            <div class="actions">
+              <button id="inspect" type="button">Inspect</button>
+              <button id="convert" class="primary" type="button">Convert</button>
+            </div>
+          </div>
+
+          <div class="report">
+            <div class="metric-row">
+              <div class="metric">
+                <span>Slides</span>
+                <strong id="slides">-</strong>
+              </div>
+              <div class="metric">
+                <span>Text</span>
+                <strong id="textShapes">-</strong>
+              </div>
+              <div class="metric">
+                <span>Tables</span>
+                <strong id="tables">-</strong>
+              </div>
+              <div class="metric">
+                <span>Images</span>
+                <strong id="pictures">-</strong>
+              </div>
+            </div>
+
+            <div class="warnings" id="warnings"></div>
+            <pre id="output" aria-live="polite"></pre>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

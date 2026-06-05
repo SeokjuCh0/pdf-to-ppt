@@ -11,8 +11,12 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from extract_pdf_json import extract_pdf_json, find_parser_jar
-from json_to_pptx import convert_json_to_pptx
+try:
+    from .extract_pdf_json import extract_pdf_json, find_parser_jar
+    from .json_to_pptx import convert_json_to_pptx
+except ImportError:
+    from extract_pdf_json import extract_pdf_json, find_parser_jar
+    from json_to_pptx import convert_json_to_pptx
 
 
 def build_parser() -> argparse.ArgumentParser:

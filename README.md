@@ -70,11 +70,37 @@ scripts/pdf_to_pptx.py input.pdf output.pptx \
   --image-output external
 ```
 
+The app-facing CLI exposes the same engine with machine-readable JSON output:
+
+```bash
+python3 -m pdfppt_core inspect input.pdf
+python3 -m pdfppt_core convert input.pdf output.pptx --json-output output.json
+python3 -m pdfppt_core verify output.pptx --json output.json
+```
+
 If the source PDF page size is known, pass it in PDF points:
 
 ```bash
 scripts/pdf_to_pptx.py input.pdf output.pptx --page-width 595 --page-height 842
 ```
+
+## Desktop App
+
+This repo includes a lightweight Tauri desktop shell under `apps/desktop`.
+It is designed for macOS and Windows without a local web server in packaged
+builds. The UI is vanilla Vite; the native layer runs the local converter CLI.
+
+Development run:
+
+```bash
+cd apps/desktop
+npm install
+npm run tauri -- dev
+```
+
+The production direction is to bundle a platform-specific `pdfppt-core` sidecar
+binary plus the parser JAR so end users do not need to install Python, Java, or
+Node.js manually.
 
 ## Convert Existing JSON
 
