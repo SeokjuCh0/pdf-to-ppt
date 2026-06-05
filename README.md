@@ -1,0 +1,117 @@
+# PDF to PPT Skill
+
+This repository is a Codex/Claude-compatible skill package for converting PDF
+reports into editable PowerPoint files.
+
+The important design choice: this is not a thin wrapper around a globally
+installed `opendataloader-pdf` CLI. It vendors a pinned OpenDataLoader PDF Java
+parser source snapshot under `vendor/opendataloader-pdf/` and provides
+repo-owned scripts for building/running that parser and converting JSON geometry
+into PPTX.
+
+## Contents
+
+- `SKILL.md` - portable skill instructions for Codex and Claude.
+- `vendor/opendataloader-pdf/` - partial OpenDataLoader PDF Java parser source snapshot.
+- `vendor/opendataloader-pdf/SOURCE.md` - upstream provenance and modification policy.
+- `scripts/build_parser.sh` - builds the vendored parser JAR.
+- `scripts/extract_pdf_json.py` - runs the repo-built parser JAR.
+- `scripts/json_to_pptx.py` - converts parser JSON to editable PPTX.
+- `scripts/pdf_to_pptx.py` - end-to-end PDF to PPTX pipeline.
+- `tests/` - fixture-driven checks for geometry conversion.
+- `prompts/chatgpt-pro.md` - prompt-only companion workflow and limitations.
+
+## Requirements
+
+For JSON-to-PPTX conversion:
+
+- Python 3.10+
+- `python-pptx`
+
+For PDF parsing from vendored source:
+
+- Java 11+
+- Maven
+
+No global `opendataloader-pdf` CLI package is required or used by the scripts.
+
+## Build The Parser
+
+```bash
+scripts/build_parser.sh --skip-tests
+```
+
+This builds from:
+
+```text
+vendor/opendataloader-pdf/java
+```
+
+and writes:
+
+```text
+build/opendataloader/opendataloader-pdf-cli.jar
+```
+
+## Convert A PDF
+
+```bash
+scripts/pdf_to_pptx.py input.pdf output.pptx \
+  --table-method cluster \
+  --reading-order xycut \
+  --image-output external
+```
+
+If the source PDF page size is known, pass it in PDF points:
+
+```bash
+scripts/pdf_to_pptx.py input.pdf output.pptx --page-width 595 --page-height 842
+```
+
+## Convert Existing JSON
+
+```bash
+scripts/json_to_pptx.py layout.json output.pptx --page-width 595 --page-height 842
+```
+
+OpenDataLoader JSON boxes are `[left, bottom, right, top]` in PDF points. The
+converter flips them into PowerPoint's top-left coordinate system.
+
+## ChatGPT Pro Prompt-Only Use
+
+ChatGPT Pro cannot execute this vendored OpenDataLoader parser from a prompt.
+Use `prompts/chatgpt-pro.md` only for:
+
+- explaining the workflow,
+- reviewing uploaded parser JSON,
+- comparing a source PDF screenshot to a generated PPTX,
+- drafting repair instructions.
+
+If parser JSON is needed, run the local scripts first and upload the JSON.
+
+## License And Attribution
+
+The vendored OpenDataLoader PDF Java parser source is Apache-2.0. Its upstream
+`LICENSE`, `NOTICE`, and `THIRD_PARTY` materials are preserved in this repo.
+Third-party components listed by upstream retain their own license terms.
+
+This README is implementation guidance, not legal advice.
+
+## Verification
+
+```bash
+python -m py_compile scripts/*.py
+python -m unittest discover -s tests
+```
+
+If Java/Maven are available:
+
+```bash
+scripts/build_parser.sh --skip-tests
+```
+
+Current known environment limitations from the original build session:
+
+- local Java runtime was not installed,
+- user sample files under `/Users/sj/Downloads` were blocked by macOS file
+  permissions from this session.

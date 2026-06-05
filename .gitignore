@@ -1,4 +1,16 @@
+.omc/
 .omx/logs/
 .omx/reports/
 .omx/state/
 .omx/team/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+*.pptx
+*.tmp
+build/
+dist/
+out/
+tmp/
+vendor/opendataloader-pdf/java/**/target/

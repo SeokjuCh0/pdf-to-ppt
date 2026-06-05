@@ -1,0 +1,128 @@
+{
+  "file name": "fixture.pdf",
+  "number of pages": 1,
+  "page width": 400,
+  "page height": 300,
+  "kids": [
+    {
+      "type": "heading",
+      "id": 1,
+      "page number": 1,
+      "bounding box": [20, 252, 260, 286],
+      "font": "ABCDEF+Pretendard-Bold",
+      "font size": 18,
+      "text color": "[0, 0, 0]",
+      "content": "2025 한국 부자 보고서"
+    },
+    {
+      "type": "paragraph",
+      "id": 2,
+      "page number": 1,
+      "bounding box": [20, 224, 300, 246],
+      "font": "ABCDEE+Pretendard-Regular",
+      "font size": 10,
+      "text color": "[0.2, 0.2, 0.2]",
+      "content": "Geometry-first editable reconstruction"
+    },
+    {
+      "type": "table",
+      "id": 3,
+      "page number": 1,
+      "bounding box": [20, 90, 380, 210],
+      "number of rows": 2,
+      "number of columns": 2,
+      "rows": [
+        {
+          "type": "table row",
+          "row number": 1,
+          "cells": [
+            {
+              "type": "table cell",
+              "page number": 1,
+              "bounding box": [20, 150, 200, 210],
+              "row number": 1,
+              "column number": 1,
+              "row span": 1,
+              "column span": 1,
+              "kids": [
+                {
+                  "type": "text chunk",
+                  "page number": 1,
+                  "bounding box": [28, 176, 160, 198],
+                  "font": "ABCDEE+Pretendard-SemiBold",
+                  "font size": 10,
+                  "text color": "#000000",
+                  "content": "항목"
+                }
+              ]
+            },
+            {
+              "type": "table cell",
+              "page number": 1,
+              "bounding box": [200, 150, 380, 210],
+              "row number": 1,
+              "column number": 2,
+              "row span": 1,
+              "column span": 1,
+              "kids": [
+                {
+                  "type": "text chunk",
+                  "page number": 1,
+                  "bounding box": [208, 176, 320, 198],
+                  "font": "ABCDEE+Pretendard-SemiBold",
+                  "font size": 10,
+                  "text color": "#000000",
+                  "content": "비율"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table row",
+          "row number": 2,
+          "cells": [
+            {
+              "type": "table cell",
+              "page number": 1,
+              "bounding box": [20, 90, 200, 150],
+              "row number": 2,
+              "column number": 1,
+              "row span": 1,
+              "column span": 1,
+              "kids": [
+                {
+                  "type": "text chunk",
+                  "page number": 1,
+                  "bounding box": [28, 116, 160, 138],
+                  "font": "ABCDEE+Pretendard-Regular",
+                  "font size": 9,
+                  "content": "금융자산 10억 이상"
+                }
+              ]
+            },
+            {
+              "type": "table cell",
+              "page number": 1,
+              "bounding box": [200, 90, 380, 150],
+              "row number": 2,
+              "column number": 2,
+              "row span": 1,
+              "column span": 1,
+              "kids": [
+                {
+                  "type": "text chunk",
+                  "page number": 1,
+                  "bounding box": [208, 116, 320, 138],
+                  "font": "ABCDEE+Pretendard-Regular",
+                  "font size": 9,
+                  "content": "1.0%"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

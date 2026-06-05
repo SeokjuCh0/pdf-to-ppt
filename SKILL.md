@@ -1,39 +1,60 @@
 ---
 name: pdf-to-ppt
-description: Convert PDF reports, tables, dashboards, and presentation-like pages into editable PowerPoint files using OpenDataLoader PDF JSON geometry. Use when making or repairing PDF-to-PPTX conversions, preserving table alignment, diagnosing layout drift, or turning parser bounding boxes into editable PowerPoint elements instead of relying only on visual prompting.
+description: Convert PDF reports, tables, dashboards, and presentation-like pages into editable PowerPoint files using a repo-vendored OpenDataLoader PDF parser snapshot and JSON geometry. Use when making or repairing PDF-to-PPTX conversions, preserving table alignment, diagnosing layout drift, or turning parser bounding boxes into editable PowerPoint elements instead of relying only on visual prompting.
 ---
 
 # PDF to PPT
 
-## Instructions
+## What This Skill Does
 
-Use this skill to convert PDFs into editable PowerPoint files with layout fidelity.
+Use this skill to convert a PDF into an editable PowerPoint deck with parser
+geometry as the source of truth.
 
-Prefer deterministic parser geometry over prompt-only visual reconstruction. The core idea is:
+This repository vendors OpenDataLoader PDF Java parser source under
+`vendor/opendataloader-pdf/`. Do not require a globally installed
+`opendataloader-pdf` CLI package. Build the repo-local parser artifact from the
+vendored source, then run the wrapper scripts in `scripts/`.
 
-1. Extract structured layout from the PDF with OpenDataLoader PDF.
-2. Use the parser's bounding boxes as the source of truth.
-3. Rebuild the slide with editable PowerPoint objects.
-4. Verify geometry first, then typography.
+Prompt-only use is a fallback. ChatGPT Pro cannot execute the vendored parser by
+itself; it can only reason over uploaded screenshots/PDF pages or already
+exported JSON.
 
-## Extraction
+## Parser Build
 
-Use OpenDataLoader PDF JSON output when possible:
+Build the vendored parser when Java 11+ and Maven are available:
 
 ```bash
-opendataloader-pdf "input.pdf" \
-  --format json \
-  --table-method cluster \
-  --reading-order xycut \
-  --image-output external \
-  --output-dir "out"
+scripts/build_parser.sh --skip-tests
 ```
 
-Use `--table-method cluster` for borderless, lightly ruled, or report-style tables.
+The script builds from `vendor/opendataloader-pdf/java` and copies the parser
+JAR to `build/opendataloader/opendataloader-pdf-cli.jar`.
 
-Use hybrid/OCR only when the PDF is scanned or the normal JSON output has clearly wrong table structure.
+If Java or Maven is missing, say so explicitly and continue only with JSON
+fixtures or already exported parser JSON.
 
-## Coordinate Mapping
+## End-To-End Conversion
+
+```bash
+scripts/pdf_to_pptx.py input.pdf output.pptx \
+  --table-method cluster \
+  --reading-order xycut \
+  --image-output external
+```
+
+Use `--page-width` and `--page-height` when exact source page dimensions are
+known. OpenDataLoader JSON always contains element bounding boxes, but it may not
+include page size metadata.
+
+## JSON-To-PPTX Only
+
+Use this when JSON was already exported:
+
+```bash
+scripts/json_to_pptx.py layout.json output.pptx --page-width 595 --page-height 842
+```
+
+## Coordinate Rules
 
 OpenDataLoader bounding boxes are:
 
@@ -41,9 +62,7 @@ OpenDataLoader bounding boxes are:
 [left, bottom, right, top]
 ```
 
-They are PDF points with a bottom-left origin.
-
-PowerPoint uses a top-left origin. Convert with:
+They are PDF points with a bottom-left origin. PowerPoint uses a top-left origin:
 
 ```text
 x = left
@@ -52,55 +71,61 @@ width = right - left
 height = top - bottom
 ```
 
-Use the source PDF page size as the slide size unless the user explicitly asks for 16:9 or another presentation format.
+Use source page size as the slide size when known. If it is not known, infer from
+JSON metadata or bounding boxes and flag that the result may need page-size
+adjustment.
 
-## Editable Reconstruction
+## Editable Reconstruction Rules
 
-Keep output editable whenever practical:
-
-- Use text boxes for paragraphs, headings, captions, and labels.
-- Use real PowerPoint tables for table elements.
-- Use image shapes only for actual image/chart elements or optional visual background references.
-- Avoid rasterizing the whole PDF page unless the user prioritizes visual fidelity over editability.
+- Use editable text boxes for headings, paragraphs, captions, and labels.
+- Use PowerPoint table shapes for table elements.
+- Use cell bounding boxes to infer row heights and column widths.
+- Use image shapes only for actual image/chart elements when the parser exported
+  image files.
+- Do not rasterize the entire PDF page unless visual fidelity is explicitly more
+  important than editability.
 
 ## Typography Rules
 
-Preserve typography as a controlled approximation, not as a pixel-perfect promise.
+Preserve typography as a controlled approximation.
 
-- Strip PDF subset prefixes from font names, such as `ABCDEE+Pretendard-Regular` to `Pretendard-Regular`.
-- Use the parser's `font size` as the starting PowerPoint point size. If the page is scaled, use `ppt_font_size = pdf_font_size * scale`.
-- Preserve bold/weight when the font name contains signals such as `Bold`, `SemiBold`, `Medium`, or `Black`.
-- Preserve text color when the parser provides it.
-- For Korean text, prefer the source font when installed. If unavailable, use a CJK-capable fallback such as `Pretendard`, `Noto Sans CJK KR`, `Apple SD Gothic Neo`, or `Malgun Gothic`.
-- Do not use PowerPoint auto-fit as the first fix. First set the correct box size, margins, line breaks, and font size. Use shrink-to-fit only for small overflow.
-- Use tight text margins for tables and report labels. Default PowerPoint text margins often make cells look misaligned.
-- Align numeric table cells right or center when the source layout clearly does so.
-- When exact font rendering matters more than editability, add a raster PDF page image as a temporary visual reference and place editable text/tables over it.
+- Strip PDF subset prefixes such as `ABCDEF+Pretendard-Regular`.
+- Start from parser `font size`; scale it only when slide/page scaling is applied.
+- Preserve obvious weight from font names such as `Bold`, `SemiBold`, `Medium`,
+  and `Black`.
+- Preserve text color when parser JSON provides it.
+- For Korean text, prefer the source font when available; otherwise use a CJK
+  fallback such as `Pretendard`, `Noto Sans CJK KR`, `Apple SD Gothic Neo`, or
+  `Malgun Gothic`.
+- Set tight text margins for table cells and report labels.
+- Do not use shrink-to-fit as the first fix; correct geometry, margins, line
+  breaks, and font size first.
 
-## Table Rules
+## Table Repair Order
 
-For tables, do not divide columns equally unless cell geometry is missing.
+When a generated table is misaligned:
 
-Use:
+1. Check JSON cell bounding boxes.
+2. If JSON boxes are correct, fix PPT coordinate/page-size mapping.
+3. If JSON boxes are wrong, rerun the parser with `--table-method cluster`,
+   page filtering, or different OpenDataLoader settings.
+4. Only hand-tune PPT table widths after parser and coordinate issues are ruled
+   out.
 
-- `table.rows[].cells[].bounding box` for row heights and column widths
-- `row span` and `column span` for merged cells
-- nested `kids[].content` for cell text
+## Verification
 
-If the generated PPT table is misaligned:
+Run available checks before claiming completion:
 
-1. Check whether JSON cell boxes are correct.
-2. If JSON is correct, fix the PowerPoint coordinate mapping.
-3. If JSON is wrong, rerun OpenDataLoader with different parser settings before hand-tuning PPT layout.
+```bash
+python -m py_compile scripts/*.py
+python -m unittest discover -s tests
+```
 
-## Quality Check
+If Java is installed, also run:
 
-Verify in this order:
+```bash
+scripts/build_parser.sh --skip-tests
+```
 
-1. Page size and coordinate origin
-2. Major section boxes and table boundaries
-3. Row and column alignment
-4. Text overflow and font sizing
-5. Final visual comparison against the source PDF or previous PPTX
-
-Do not preserve drift from an existing bad PPTX. Use it only as a comparison artifact.
+For protected local PDFs, report macOS permission errors directly instead of
+guessing from inaccessible files.
